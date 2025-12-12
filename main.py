@@ -20,7 +20,6 @@ from ctypes import wintypes
 
 
 
-# 管理员权限检查
 def is_admin():
     try:
         return ctypes.windll.shell32.IsUserAnAdmin()
@@ -29,7 +28,6 @@ def is_admin():
 
 
 class MonitorThread(QThread):
-    """监控线程"""
 
     status_update = pyqtSignal(str, bool, str)
     interval_changed = pyqtSignal(int)
@@ -97,7 +95,6 @@ class MonitorThread(QThread):
                 pid
             )
 
-            # 检查优先级
             try:
                 current_priority = win32process.GetPriorityClass(handle)
                 if current_priority != self.low_priority:
@@ -106,7 +103,6 @@ class MonitorThread(QThread):
             except:
                 pass
 
-            # 检查CPU亲和性
             try:
                 current_affinity = win32process.GetProcessAffinityMask(handle)[0]
                 target_affinity = self.get_last_cpu_mask()
@@ -158,7 +154,6 @@ class ProcessMonitorWindow(QMainWindow):
         self.setup_tray_icon()
         self.start_monitoring()
 
-        # 确保在任务栏显示
         self.setWindowFlags(Qt.Window | Qt.WindowMinimizeButtonHint | Qt.WindowCloseButtonHint)
 
     def show_admin_warning(self):
@@ -172,19 +167,11 @@ class ProcessMonitorWindow(QMainWindow):
         msg.exec_()
 
     def create_tray_icon(self):
-        """创建托盘图标（使用内置图标）"""
-        # 使用PyQt5内置图标
         from PyQt5.QtWidgets import QStyle
         from PyQt5.QtGui import QIcon
 
-        # 方法1: 使用系统图标
         style = self.style()
         icon = style.standardIcon(QStyle.SP_ComputerIcon)
-
-        # 或者使用其他内置图标：
-        # icon = style.standardIcon(QStyle.SP_DriveHDIcon)  # 硬盘图标
-        # icon = style.standardIcon(QStyle.SP_DesktopIcon)  # 桌面图标
-        # icon = style.standardIcon(QStyle.SP_MessageBoxInformation)  # 信息图标
 
         return icon
 
@@ -192,10 +179,8 @@ class ProcessMonitorWindow(QMainWindow):
         self.setWindowTitle("缓解ACE扫盘工具")
         self.setGeometry(300, 300, 500, 400)
 
-        # 创建自定义托盘图标
         self.setWindowIcon(self.create_tray_icon())
 
-        # 设置样式
         self.setStyleSheet("""
             QMainWindow {
                 background-color: #f5f5f5;
@@ -241,13 +226,11 @@ class ProcessMonitorWindow(QMainWindow):
         layout.setSpacing(10)
         layout.setContentsMargins(15, 15, 15, 15)
 
-        # 标题
         title_label = QLabel("🔍 缓解ACE扫盘工具")
         title_label.setObjectName("title")
         title_label.setAlignment(Qt.AlignCenter)
         layout.addWidget(title_label)
 
-        # 进程状态显示
         self.status_labels = {}
         for i, process_name in enumerate(["SGuard64.exe", "SGuardSvc64.exe"]):
             group = QGroupBox(f"进程 {i + 1}: {process_name}")
@@ -262,13 +245,11 @@ class ProcessMonitorWindow(QMainWindow):
 
             self.status_labels[process_name] = status_label
 
-        # 控制面板
         control_group = QGroupBox("控制面板")
         control_layout = QVBoxLayout()
 
 
 
-        # 托盘选项
         tray_layout = QHBoxLayout()
         self.tray_cb = QCheckBox("关闭窗口时隐藏到托盘")
         self.tray_cb.setChecked(True)
@@ -276,7 +257,6 @@ class ProcessMonitorWindow(QMainWindow):
         tray_layout.addStretch()
         control_layout.addLayout(tray_layout)
 
-        # 按钮
         button_layout = QHBoxLayout()
 
         self.refresh_btn = QPushButton("🔄 立即刷新")
@@ -296,7 +276,6 @@ class ProcessMonitorWindow(QMainWindow):
 
 
     def setup_tray_icon(self):
-        """设置系统托盘图标"""
         if not QSystemTrayIcon.isSystemTrayAvailable():
             print("系统托盘不可用")
             return
@@ -304,7 +283,6 @@ class ProcessMonitorWindow(QMainWindow):
         self.tray_icon = QSystemTrayIcon(self)
         self.tray_icon.setIcon(self.create_tray_icon())
 
-        # 创建托盘菜单
         tray_menu = QMenu()
 
         show_action = tray_menu.addAction("显示主窗口")
@@ -317,11 +295,9 @@ class ProcessMonitorWindow(QMainWindow):
         self.tray_icon.setContextMenu(tray_menu)
         self.tray_icon.activated.connect(self.tray_icon_clicked)
 
-        # 显示托盘图标
         self.tray_icon.show()
         self.tray_icon.setToolTip("缓解ACE扫盘工具\n正在后台运行")
 
-        # 显示通知
         self.tray_icon.showMessage(
             "缓解ACE扫盘工具",
             "程序已启动并将在后台运行",
@@ -382,28 +358,22 @@ class ProcessMonitorWindow(QMainWindow):
         msg_box.exec()
 
     def tray_icon_clicked(self, reason):
-        """托盘图标被点击"""
         if reason == QSystemTrayIcon.DoubleClick:
             self.show_normal()
 
     def show_normal(self):
-        """显示主窗口"""
         self.show()
         self.activateWindow()
         self.raise_()
 
     def closeEvent(self, event):
-        """关闭窗口事件处理"""
         if self.tray_cb.isChecked() and self.tray_icon is not None:
-            # 最小化到托盘
             self.hide()
             event.ignore()
         else:
-            # 直接退出
             self.quit_application()
 
     def quit_application(self):
-        """退出程序"""
         if self.monitor_thread:
             self.monitor_thread.stop()
         if self.tray_icon:
@@ -412,7 +382,6 @@ class ProcessMonitorWindow(QMainWindow):
 
 
 def main():
-    # 高DPI支持
     if hasattr(Qt, 'AA_EnableHighDpiScaling'):
         QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
     if hasattr(Qt, 'AA_UseHighDpiPixmaps'):
@@ -420,7 +389,7 @@ def main():
 
     app = QApplication(sys.argv)
     app.setApplicationName("缓解ACE扫盘工具")
-    app.setQuitOnLastWindowClosed(False)  # 重要：不自动退出
+    app.setQuitOnLastWindowClosed(False) 
 
     window = ProcessMonitorWindow()
     window.show()
